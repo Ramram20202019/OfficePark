@@ -9,43 +9,48 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'bookaslot2.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
-
-
-
+import 'gmailuserlist.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   var email = prefs.getString('email');
-  print(email);
-  runApp(MaterialApp(home: email == null ? MyApp() : bookaslot2(username: email,)));
+  runApp(MaterialApp(
+      home: email == null
+          ? MyApp()
+          : bookaslot2(
+              username: email,
+            )));
+  SharedPreferences prefs2 = await SharedPreferences.getInstance();
+  var admin_email = prefs2.getString('admin_email');
+  runApp(MaterialApp(
+      home: admin_email == null
+          ? MyApp()
+          : gmailuserlist(
+              adminEmail: admin_email,
+            )));
 }
 
-class MyApp extends StatelessWidget{
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home:MyHomePage(),
+      home: MyHomePage(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-
-class MyHomePage extends StatefulWidget{
-
-
+class MyHomePage extends StatefulWidget {
   @override
   _Myhomepagestate createState() => _Myhomepagestate();
 }
 
-class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
-
+class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = new GoogleSignIn();
 
-  Future<FirebaseUser> googlesignin() async{
+  Future<FirebaseUser> googlesignin() async {
     GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
     GoogleSignInAuthentication gSA = await googleSignInAccount.authentication;
 
@@ -53,89 +58,117 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
       accessToken: gSA.accessToken,
       idToken: gSA.idToken,
     );
-    final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
-
-    Future<bool> ret1() async {
-      QuerySnapshot g = await Firestore.instance.collection('Gmailuserlist')
-          .where('Email', isGreaterThan: '')
-          .getDocuments();
-      bool i1 = false;
-      var d = g.documents;
-      for (int j = 0; j < g.documents.length; j++) {
-        if (user.email == d[j]['Email'].toString()) {
-          i1 = true;
+    final FirebaseUser user =
+        (await _auth.signInWithCredential(credential)).user;
+    if (user.email == "chnsag4app@gmail.com") {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('admin_email', user.email);
+      _scaffoldKey.currentState.showSnackBar(new SnackBar(
+        duration: new Duration(seconds: 4),
+        content: new Row(
+          children: <Widget>[
+            new CircularProgressIndicator(),
+            new Text("  Signing-In...")
+          ],
+        ),
+      ));
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => gmailuserlist(
+                    adminEmail: "chnsag4app@gmail.com",
+                  )));
+    } else {
+      Future<bool> ret1() async {
+        QuerySnapshot g = await Firestore.instance
+            .collection('Gmailuserlist')
+            .where('Email', isGreaterThan: '')
+            .getDocuments();
+        bool i1 = false;
+        var d = g.documents;
+        for (int j = 0; j < g.documents.length; j++) {
+          if (user.email == d[j]['Email'].toString()) {
+            i1 = true;
+          }
         }
+        return i1;
       }
-      return i1;
-    }
 
-    bool gmailcheck = await ret1();
+      bool gmailcheck = await ret1();
 
-    if(gmailcheck == true) {
-      _scaffoldKey.currentState.showSnackBar(
-          new SnackBar(duration: new Duration(seconds: 4), content:
-          new Row(
+      if (gmailcheck == true) {
+        _scaffoldKey.currentState.showSnackBar(new SnackBar(
+          duration: new Duration(seconds: 4),
+          content: new Row(
             children: <Widget>[
               new CircularProgressIndicator(),
               new Text("  Signing-In...")
             ],
           ),
-          ));
-      try {
-        Future<bool> ret() async {
-          QuerySnapshot q = await Firestore.instance.collection('ParkingDB')
-              .where('Email', isGreaterThan: '')
-              .getDocuments();
-          bool i1 = false;
-          var d = q.documents;
-          for (int j = 0; j < q.documents.length; j++) {
-            if (user.email == d[j]['Email'].toString()) {
-              i1 = true;
+        ));
+        try {
+          Future<bool> ret() async {
+            QuerySnapshot q = await Firestore.instance
+                .collection('ParkingDB')
+                .where('Email', isGreaterThan: '')
+                .getDocuments();
+            bool i1 = false;
+            var d = q.documents;
+            for (int j = 0; j < q.documents.length; j++) {
+              if (user.email == d[j]['Email'].toString()) {
+                i1 = true;
+              }
             }
+            return i1;
           }
-          return i1;
-        }
 
-        bool j = await ret();
-        if (!j) {
-          Firestore.instance.collection("ParkingDB").document().setData(
-              {'Email': user.email});
-          print('User added to the database');
+          bool j = await ret();
+          if (!j) {
+            Firestore.instance
+                .collection("ParkingDB")
+                .document()
+                .setData({'Email': user.email});
+            print('User added to the database');
+          }
+          if (user != null) {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            prefs.setString('email', user.email);
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => bookaslot2(
+                          username: user.email,
+                        )));
+          }
+        } catch (e) {
+          print(e);
         }
-        if (user != null) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          prefs.setString('email', user.email);
-          Navigator.push(context, MaterialPageRoute(
-              builder: (context) => bookaslot2(username: user.email,)));
-        }
-      } catch (e) {
-        print(e);
-      }
-      return user;
-    }
-
-    else{
-      Flushbar(
-        padding: EdgeInsets.all(10),
-        borderRadius: 8,
-        backgroundColor: Colors.blue,
-        boxShadows: [
-          BoxShadow(
-            color: Colors.black45,
-            offset: Offset(3, 3),
-            blurRadius: 3,
+        return user;
+      } else {
+        Flushbar(
+          padding: EdgeInsets.all(10),
+          borderRadius: 8,
+          backgroundColor: Colors.blue,
+          boxShadows: [
+            BoxShadow(
+              color: Colors.black45,
+              offset: Offset(3, 3),
+              blurRadius: 3,
+            ),
+          ],
+          duration: new Duration(seconds: 4),
+          dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+          leftBarIndicatorColor: Colors.red,
+          forwardAnimationCurve: Curves.easeInOutCubic,
+          title: "Sorry! Invalid Access",
+          message: "Your Gmail is not authorized to login",
+          flushbarPosition: FlushbarPosition.TOP,
+          icon: Icon(
+            Icons.warning,
+            color: Colors.red,
           ),
-        ],
-        duration: new Duration(seconds: 4),
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        leftBarIndicatorColor: Colors.red,
-        forwardAnimationCurve: Curves.easeInOutCubic,
-        title: "Sorry! Invalid Access",
-        message: "Your Gmail is not authorized to login",
-        flushbarPosition: FlushbarPosition.TOP,
-        icon: Icon(Icons.warning, color: Colors.red,),
-
-      ).show(context);
+        ).show(context);
+      }
     }
   }
 
@@ -143,9 +176,6 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   String un;
   String pw;
-
-
-
 
   @override
   void initState() {
@@ -163,15 +193,13 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
   void didChangeAppLifecycleState(AppLifecycleState state) {
     print("APP_STATE: $state");
 
-    if(state == AppLifecycleState.resumed){
-
-    }else if(state == AppLifecycleState.inactive){
+    if (state == AppLifecycleState.resumed) {
+    } else if (state == AppLifecycleState.inactive) {
       // app is inactive
-    }else if(state == AppLifecycleState.paused){
+    } else if (state == AppLifecycleState.paused) {
       // user quit our app temporally
     }
   }
-
 
   var _u = new TextEditingController();
   var _p = new TextEditingController();
@@ -205,11 +233,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
           height: 60.0,
           child: TextFormField(
             controller: _u,
-            validator: (val) =>
-            val.isEmpty
-                ? 'Email cannot be empty'
-                : null,
-
+            validator: (val) => val.isEmpty ? 'Email cannot be empty' : null,
             onSaved: (val) => un = val,
             keyboardType: TextInputType.emailAddress,
             style: TextStyle(
@@ -265,10 +289,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
           height: 60.0,
           child: TextFormField(
             controller: _p,
-            validator: (val) =>
-            val.isEmpty
-                ? 'Password cannot be empty'
-                : null,
+            validator: (val) => val.isEmpty ? 'Password cannot be empty' : null,
             onSaved: (val) => pw = val,
             obscureText: true,
             style: TextStyle(
@@ -294,6 +315,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
       ],
     );
   }
+
   Widget _loginbutton() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 25.0),
@@ -319,6 +341,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
       ),
     );
   }
+
   Widget _extratext() {
     return Column(
       children: <Widget>[
@@ -341,6 +364,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
       ],
     );
   }
+
   Widget _socialicon(Function onTap, AssetImage logo) {
     return GestureDetector(
       onTap: onTap,
@@ -372,7 +396,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
           _socialicon(
-                () => googlesignin(),
+            () => googlesignin(),
             AssetImage(
               'assets/images/gimage.png',
             ),
@@ -381,7 +405,6 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -424,7 +447,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
                         Text(
-                          'My Parking App',
+                          'Office Park',
                           style: TextStyle(
                             color: Colors.white,
                             fontFamily: 'Pacifico',
@@ -450,37 +473,34 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
           ),
         ),
       ),
-
-
     );
   }
 
   Future<void> signin() async {
-
     if (_formKey.currentState.validate()) {
-
       _formKey.currentState.save();
 
       try {
-
-        await FirebaseAuth.instance.signInWithEmailAndPassword(email: un, password: pw);
-        _scaffoldKey.currentState.showSnackBar(
-            new SnackBar(duration: new Duration(seconds: 4), content:
-            new Row(
-              children: <Widget>[
-                new CircularProgressIndicator(),
-                new Text("  Signing-In...")
-              ],
-            ),
-            ));
-        Future<bool> ret() async{
-          QuerySnapshot q = await Firestore.instance.collection('ParkingDB')
+        await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: un, password: pw);
+        _scaffoldKey.currentState.showSnackBar(new SnackBar(
+          duration: new Duration(seconds: 4),
+          content: new Row(
+            children: <Widget>[
+              new CircularProgressIndicator(),
+              new Text("  Signing-In...")
+            ],
+          ),
+        ));
+        Future<bool> ret() async {
+          QuerySnapshot q = await Firestore.instance
+              .collection('ParkingDB')
               .where('Email', isGreaterThan: '')
               .getDocuments();
           bool i1 = false;
           var d = q.documents;
           for (int j = 0; j < q.documents.length; j++) {
-            if(un == d[j]['Email'].toString()){
+            if (un == d[j]['Email'].toString()) {
               i1 = true;
             }
           }
@@ -488,14 +508,21 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
         }
 
         bool j = await ret();
-        if(!j){
-          Firestore.instance.collection("ParkingDB").document().setData({'Email': un});
+        if (!j) {
+          Firestore.instance
+              .collection("ParkingDB")
+              .document()
+              .setData({'Email': un});
           print('User added to the database');
         }
-        Navigator.push(context, MaterialPageRoute(builder: (context) => bookaslot2(username: un,)));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => bookaslot2(
+                      username: un,
+                    )));
       } catch (e) {
-
-        switch(e.message){
+        switch (e.message) {
           case 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.':
             Flushbar(
               padding: EdgeInsets.all(10),
@@ -515,8 +542,10 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
               title: "Oops! Please Check you Internet Connection",
               message: " ",
               flushbarPosition: FlushbarPosition.TOP,
-              icon: Icon(Icons.network_check, color: Colors.red,),
-
+              icon: Icon(
+                Icons.network_check,
+                color: Colors.red,
+              ),
             ).show(context);
             break;
           default:
@@ -538,251 +567,14 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver{
               title: "Invalid Credentails.! Please try again",
               message: "Please check your Username/Password",
               flushbarPosition: FlushbarPosition.TOP,
-              icon: Icon(Icons.warning, color: Colors.red,),
-
+              icon: Icon(
+                Icons.warning,
+                color: Colors.red,
+              ),
             ).show(context);
         }
         print(e.message);
       }
-
     }
   }
-
 }
-
-
-
-
-// ignore: must_be_immutable
-/*class Page2 extends StatefulWidget{
-  String username;
-  Page2({Key key, this.username}) : super (key: key);
-  @override
-  _Page2state createState() => _Page2state();
-}*/
-
-/*class _Page2state extends State<Page2> {
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    return Scaffold(backgroundColor: Color(0xFFFF9861),
-        appBar: AppBar(
-          backgroundColor: Color(0xFFFF9861),
-          automaticallyImplyLeading: false,
-          actions: <Widget>[
-            new IconButton(icon: Icon(MdiIcons.logout, color: Color(0xFFFFFFFF), size: 35.0,), onPressed: (){_signout(context);})
-          ],
-        ),
-        body: ListView(
-            children: <Widget>[
-              SizedBox(height: 25.0,),
-              Padding(
-                padding: EdgeInsets.only(left: 40.0),
-                child: Wrap(
-                  children: <Widget>[Row(
-                    children: <Widget>[
-                      Text('Welcome\t',
-                          style: TextStyle(
-                              fontFamily: 'Pacifico',
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 25.0
-                          )),
-                      Text('${widget.username}'.substring(0, 8) + '!!!!',
-                          style: TextStyle(
-                              fontFamily: 'Pacifico',
-                              color: Colors.black,
-                              fontSize: 25.0
-                          ))
-                    ],
-                  ),
-                ]),
-              ),
-              SizedBox(height: 40.0),
-              Container(
-                  padding: EdgeInsets.only(left: 20.0, right: 5.0),
-                  height: MediaQuery
-                      .of(context)
-                      .size
-                      .height - 350.0,
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(80.0),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black87,
-                            offset: Offset(0.0, 0.0),
-                            blurRadius: 25.0
-                        )
-                      ]
-                  ),
-                  child: Padding(
-                      padding: EdgeInsets.only(
-                          left: 1.0, right: 1.0, top: 16.0),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            Text('DASHBOARD',
-                                style: TextStyle(
-                                    fontSize: 25.0,
-                                    fontFamily: 'Roboto',
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: .6)),
-                            RaisedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                      context, MaterialPageRoute(
-                                      builder: (context) =>
-                                          slotshow(
-                                            username: '${widget.username}',)));
-                                },
-                                textColor: Colors.white,
-                                splashColor: Colors.grey,
-                                padding: const EdgeInsets.all(0.0),
-                                child: Container(
-                                  width: 250.0,
-                                  height: 80.0,
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: <Color>[
-                                        Color(0xFFFF9861),
-                                        Color(0xFF42A5F5),
-                                      ],
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: const Text(
-                                      'MY BOOKINGS',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 20,
-                                          fontFamily: 'Pacifico')
-                                  ),
-                                )
-                            ),
-                            RaisedButton(
-                                onPressed: () {
-                                  checkuser();
-                                },
-                                textColor: Colors.white,
-                                splashColor: Colors.grey,
-                                padding: const EdgeInsets.all(0.0),
-                                child: Container(
-                                  width: 250.0,
-                                  height: 80.0,
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: <Color>[
-                                        Color(0xFFFF9861),
-                                        Color(0xFF42A5F5),
-                                      ],
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: const Text(
-                                      'BOOK A SLOT',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 20,
-                                          fontFamily: 'Pacifico')
-                                  ),
-                                )
-                            )
-                          ]
-                      )
-                  )
-              )
-            ]
-        )
-    );
-  }
-  Future<void> checkuser() async {
-    QuerySnapshot querySnapshot = await Firestore.instance.collection(
-        'ParkingDB')
-        .where('Email', isEqualTo: '${widget.username}')
-        .getDocuments();
-    var doc = querySnapshot.documents;
-    print(doc[0].documentID);
-    print(doc[0]['Slot_no']);
-    if (doc[0]['Slot_no'] != null) {
-      print('Inside if');
-      Fluttertoast.showToast(
-          msg: "You have already booked a slot cannot book again. Please cancel the slot you have booked for booking again",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIos: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0);
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) =>
-          slotshow(username: doc[0]['Email'],)));
-    }
-    else{
-      Navigator.push(
-          context, MaterialPageRoute(
-          builder: (context) => bookaslot(username: '${widget.username}',)));
-    }
-  }
-   _signout(context) async {
-     Alert(
-       context: context,
-       type: AlertType.warning,
-       title: "Are you sure you want to Logout?",
-       buttons: [
-         DialogButton(
-           child: Text(
-             "NO",
-             style: TextStyle(color: Colors.white, fontSize: 20),
-           ),
-           onPressed: () => Navigator.pop(context),
-           width: 120,
-         ),
-         DialogButton(
-           child: Text(
-             "YES",
-             style: TextStyle(color: Colors.white, fontSize: 20),
-           ),
-           onPressed: () async{
-               try {
-                 Navigator.of(context).popUntil((route) => route.isFirst);
-                 Navigator.pushReplacement(
-                     context, MaterialPageRoute(
-                     builder: (context) => MyHomePage()));
-                 Flushbar(
-                   padding: EdgeInsets.all(10),
-                   borderRadius: 8,
-                   backgroundColor: Colors.blue,
-                   boxShadows: [
-                     BoxShadow(
-                       color: Colors.black45,
-                       offset: Offset(3, 3),
-                       blurRadius: 3,
-                     ),
-                   ],
-                   duration: new Duration(seconds: 4),
-                   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-                   forwardAnimationCurve: Curves.easeInOutCubic,
-                   title: "Logged Out Successfully",
-                   message: " ",
-                   flushbarPosition: FlushbarPosition.TOP,
-                   icon: Icon(Icons.thumb_up, color: Colors.white,),
-                 ).show(context);
-               }
-               catch (e) {
-                 print(e.message);
-               }
-           },
-           width: 120,
-         ),
-       ],
-     ).show();
-   }
-}*/
-
-
-
-
-
-
-
-
