@@ -31,6 +31,12 @@ Future<void> main() async {
             )));
 }
 
+/*void main (){
+  runApp(MaterialApp(
+      home: MyApp()
+          ));
+}*/
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -478,7 +484,7 @@ class _Myhomepagestate extends State<MyHomePage> with WidgetsBindingObserver {
 
   Future<void> signin() async {
     if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+        _formKey.currentState.save();
 
       try {
         await FirebaseAuth.instance

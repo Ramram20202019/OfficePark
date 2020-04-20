@@ -6,8 +6,7 @@ const p3 = 'Phase-3';
 const totslots = 'totslots';
 const Slot_num = 'Slot_no';
 const pdb = 'ParkingDB';
-const emp = 'Employees';
-const name = 'Name';
+ const name = 'Name';
 //const Email = 'Email';
 const ascendas_url =
     "https://www.google.com/maps/uv?hl=en&pb=!1s0x3a525d639e47618b%3A0xaa10fd327e29e31c!3m1!7e115!4shttps%3A%2F%2Flh5.googleusercontent.com%2Fp%2FAF1QipO4_ADl2bWjQ6Xaa8un7jOIMAwXbm2HkQCUPjD-%3Dw406-h200-k-no!5sascendas%20it%20park%20chennai%20-%20Google%20Search!15sCAQ&imagekey=!1e10!2sAF1QipNHLg-Eu9OUhgd1uH8T4_OfOHRyMH-BVTr_zeq1&sa=X&ved=2ahUKEwidp-vWpefmAhUnzjgGHce7CCoQoiowFHoECB0QBg";
